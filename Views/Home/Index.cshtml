@@ -1,0 +1,66 @@
+﻿@model JeuInjecta.Models.InjectaModel
+@{
+    ViewData["Title"] = "Jeu d'Injecta";
+}
+
+<h2>@ViewData["Title"]</h2>
+
+<!-- Formulaire du pari -->
+<form method="post" asp-action="Parier" onsubmit="return validateForm()">
+    <div class="mb-3">
+        <label for="pariRecto" class="form-label">Parisez sur le Recto :</label>
+        <div>
+            <input type="radio" id="pariRecto" name="pari" value="true" /> Recto
+            <input type="radio" id="pariVerso" name="pari" value="false" /> Verso
+        </div>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Lancer le pari</button>
+</form>
+
+<!-- Message de résultat -->
+@if (TempData["Message"] != null)
+{
+    <div class="alert alert-success">
+        <h3>@TempData["Message"]</h3>
+    </div>
+}
+
+<!-- Avertissement si 2 erreurs -->
+@if (TempData["Avertissement"] != null)
+{
+    <div style="color:red;">
+        <h4>@TempData["Avertissement"]</h4>
+    </div>
+}
+
+<!-- Points accumulés -->
+@if (ViewBag.Points != null)
+{
+    <div>
+        <h4>Points accumulés: @ViewBag.Points</h4>
+    </div>
+}
+
+<!-- Erreurs accumulées -->
+@if (ViewBag.Erreurs != null)
+{
+    <div>
+        <h4>Erreurs accumulées: @ViewBag.Erreurs</h4>
+    </div>
+}
+
+<script>
+    function validateForm() {
+        var recto = document.getElementById('pariRecto');
+        var verso = document.getElementById('pariVerso');
+
+        // Vérifie si l'utilisateur a sélectionné un type de pari
+        if (!recto.checked && !verso.checked) {
+            alert("Veuillez sélectionner un type de pari (Recto ou Verso).");
+            return false; // Empêche la soumission si aucune option n'est sélectionnée
+        }
+
+        return true; // Permet la soumission du formulaire si une option est sélectionnée
+    }
+</script>
