@@ -2,24 +2,30 @@
 {
     public class InjectaModel
     {
-        // Type of the properties boolean for showing the status of the currency piece
-        public bool EstRecto { get; set; }
+        private static readonly string[] Options = { "recto", "verso" };
+        private static readonly Random rand = new Random();
 
-        // Point
+        // Propriété tirée aléatoirement
+        public string? SystemeChoix { get; private set; }
+
+        // Propriété utilisateur (liée au formulaire)
+        public string? UserChoix { get; set; }
+
+        // Résultat du tirage
+        public bool IsWin => UserChoix == SystemeChoix;
+
+        // Propriétés de score (tu peux les gérer via la session ensuite)
         public int Points { get; set; }
+        public int Erreurs { get; set; }
 
-        // Constructor
-        public InjectaModel()
+        // Méthode: tirage au hasard
+        public void SimulerTirage()
         {
-            // Initialisation of the boolean condition
-            EstRecto = new Random().Next(2) == 0; // Randomly set to true or false
-            Points = 0; // Initialize points to 0
+            SystemeChoix = Options[rand.Next(Options.Length)];
         }
 
-        // Method to incretement the points
-        public void AjouterPoints(int points)
-        {
-            Points += points;
-        }
+        // Propriété utile si tu veux booléifier la logique
+        public bool EstRecto => SystemeChoix == "recto";
     }
 }
+

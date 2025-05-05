@@ -1,90 +1,110 @@
-using JeuInjecta.Models;
+ï»¿using JeuInjecta.Models;
 using Microsoft.AspNetCore.Mvc;
+using System;
 using System.Diagnostics;
+using static System.Collections.Specialized.BitVector32;
 
 namespace JeuInjecta.Controllers
 {
     public class HomeController : Controller
     {
-        // Action GET pour afficher la page de jeu
         public IActionResult Index()
         {
-            // Récupérer les points et erreurs depuis la session
-            ViewBag.Points = HttpContext.Session.GetInt32("Points") ?? 0;
-            ViewBag.Erreurs = HttpContext.Session.GetInt32("Erreurs") ?? 0;
-
-            return View(); // Retourner la vue Index
+            return View(new InjectaModel());
         }
 
         // Action POST pour traiter le pari de l'utilisateur
         [HttpPost]
-        public IActionResult Parier(bool? pari)
+        public IActionResult Parier(string choix)
         {
-            // Si aucune option n'est sélectionnée
-            if (!pari.HasValue)
+            if (string.IsNullOrEmpty(choix) || (choix != "recto" && choix != "verso"))
             {
-                TempData["Avertissement"] = "Veuillez sélectionner un type de pari (Recto ou Verso).";
-                return RedirectToAction("Index"); // Rediriger vers Index avec l'avertissement
+                TempData["Avertissement"] = "Veuillez sÃ©lectionner un choix valide (Recto ou Verso).";
+                return RedirectToAction("Index");
             }
 
-            // Récupérer les points et erreurs depuis la session
+            #region EstRecto
+            // CrÃ©ation d'une instance de modÃ¨le
+            var injecta = new InjectaModel();
+            injecta.UserChoix = choix;
+            injecta.SimulerTirage();
+
+            bool win = injecta.IsWin;
+
+            // RÃ©cupÃ©rer les points et erreurs depuis la session
             int points = HttpContext.Session.GetInt32("Points") ?? 0;
             int erreurs = HttpContext.Session.GetInt32("Erreurs") ?? 0;
 
-            // Simuler un tirage aléatoire pour Recto ou Verso
-            bool estRecto = new InjectaModel().EstRecto;  // Simule le tirage de la pièce
+            // LINQ: Traitement points/erreurs compact
+            (points, erreurs) = win
+                ? (points + 1, erreurs)
+                : (points, erreurs + 1);
+            #endregion EstRecto
 
-            // Logique de tirage et vérification du pari
-            if (pari == estRecto)  // Si l'utilisateur a gagné
+            #region Inuallable
+            // Si aucune option n'est sÃ©lectionnÃ©e
+            if (string.IsNullOrEmpty(choix) || (choix != "recto" && choix != "verso"))
             {
-                points += 1;  // Ajouter 1 point à chaque victoire
-                erreurs = 0;  // Réinitialiser les erreurs à 0 après une victoire
-                TempData["Message"] = "Bravo ! Vous avez gagné 1 point !";
-            }
-            else  // Si l'utilisateur a perdu
-            {
-                erreurs += 1;  // Ajouter 1 erreur à chaque défaite
-                TempData["Message"] = "Dommage ! Ressayez-le !";
+                TempData["Avertissement"] = "Veuillez sÃ©lectionner un choix valide (Recto ou Verso).";
+                return RedirectToAction("Index");
             }
 
-            // Si les points atteignent 10, on montre un message spécial
+
+            #endregion Inuallable
+
+            #region Messageries
+            // Messages logiques
             if (points >= 2)
             {
-                TempData["Message"] = "Félicitations ! Vous avez atteint 2 points !";
-                points = 0;  // Réinitialiser les points après 3 erreurs
-                erreurs = 0;  // Réinitialiser les erreurs après la perte
+                TempData["Message"] = "FÃ©licitations ! Vous avez atteint 2 points !";
+                points = erreurs = 0;
             }
-
-            // Vérifier le nombre d'erreurs pour afficher un avertissement ou une perte
-            if (erreurs == 2)
+            else if (erreurs == 2)
             {
-                TempData["Avertissement"] = "Attention ! Vous avez 2 erreurs. Encore une erreur et vous perdrez définitivement !";
+                TempData["Avertissement"] = "Attention ! Encore une erreur et vous perdrez !";
             }
-
-            if (erreurs >= 3)
+            else if (erreurs >= 3)
             {
-                TempData["Message"] = "Vous avez perdu ! Vous avez atteint 3 erreurs.";
-                points = 0;  // Réinitialiser les points après 3 erreurs
-                erreurs = 0;  // Réinitialiser les erreurs après la perte
+                TempData["Message"] = "Vous avez perdu !";
+                points = erreurs = 0;
             }
 
-            // Stocker les points et erreurs dans la session pour qu'ils soient persistés entre les requêtes
+            // Sauvegarder dans la session
             HttpContext.Session.SetInt32("Points", points);
             HttpContext.Session.SetInt32("Erreurs", erreurs);
 
-            // Rediriger vers l'action Index pour afficher les résultats
-            return RedirectToAction("Index");  // Rediriger vers Index après le traitement
+            // Utilisation de ViewData comme dictionnaire
+            ViewData["UserChoix"] = injecta.UserChoix;
+            ViewData["SystemeChoix"] = injecta.SystemeChoix;
+            ViewData["IsWin"] = injecta.IsWin;
+            ViewData["Points"] = HttpContext.Session.GetInt32("Points") ?? 0;
+            ViewData["Erreurs"] = HttpContext.Session.GetInt32("Erreurs") ?? 0;
+            #endregion Messages
+
+            #region Rediriger
+            // Rediriger vers l'action Index pour afficher les rÃ©sultats
+            return View("Index", injecta);  // Rediriger vers Index aprÃ¨s le traitement
+            #endregion
+        }
+
+        [HttpPost]
+        public IActionResult Rejouer()
+        {
+            #region Return
+            // Supprimer toutes les donnÃ©es de session
+            HttpContext.Session.Clear();
+
+            // Ajouter un message temporaire de confirmation
+            TempData["Message"] = "Le jeu a Ã©tÃ© rÃ©initialisÃ©.";
+
+            // Rediriger vers la vue Index
+            return RedirectToAction("Index");
+            #endregion
         }
 
         public IActionResult Privacy()
         {
             return View();
-        }
-
-        [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
-        public IActionResult Error()
-        {
-            return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
         }
     }
 }

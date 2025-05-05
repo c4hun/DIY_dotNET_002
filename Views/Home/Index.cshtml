@@ -5,62 +5,91 @@
 
 <h2>@ViewData["Title"]</h2>
 
+
+<!--#region FORMULAIRE  -->
 <!-- Formulaire du pari -->
 <form method="post" asp-action="Parier" onsubmit="return validateForm()">
     <div class="mb-3">
-        <label for="pariRecto" class="form-label">Parisez sur le Recto :</label>
+        <label for="pariRecto" class="form-label">Pariez sur :</label>
         <div>
-            <input type="radio" id="pariRecto" name="pari" value="true" /> Recto
-            <input type="radio" id="pariVerso" name="pari" value="false" /> Verso
+            <input type="radio" id="pariRecto" name="choix" value="recto" /> Recto
+            <input type="radio" id="pariVerso" name="choix" value="verso" /> Verso
         </div>
     </div>
 
-    <button type="submit" class="btn btn-primary">Lancer le pari</button>
+    <button type="submit" class="btn btn-primary" value="parier">Lancer le pari</button>
 </form>
+<!--#endregion -->
 
+<!--#region MESSAGERIES BOITS  -->
 <!-- Message de résultat -->
 @if (TempData["Message"] != null)
 {
-    <div class="alert alert-success">
-        <h3>@TempData["Message"]</h3>
-    </div>
+<div class="alert alert-success">
+    <h3>@TempData["Message"]</h3>
+</div>
 }
 
 <!-- Avertissement si 2 erreurs -->
 @if (TempData["Avertissement"] != null)
 {
-    <div style="color:red;">
-        <h4>@TempData["Avertissement"]</h4>
-    </div>
+<div style="color:red;">
+    <h4>@TempData["Avertissement"]</h4>
+</div>
 }
 
 <!-- Points accumulés -->
-@if (ViewBag.Points != null)
+@if (ViewData["Points"] != null)
 {
-    <div>
-        <h4>Points accumulés: @ViewBag.Points</h4>
-    </div>
+<div>
+    <h4>Points accumulés: @ViewData["Points"]</h4>
+</div>
 }
 
 <!-- Erreurs accumulées -->
-@if (ViewBag.Erreurs != null)
+@if (ViewData["Erreurs"] != null)
 {
-    <div>
-        <h4>Erreurs accumulées: @ViewBag.Erreurs</h4>
-    </div>
+<div>
+    <h4>Erreurs accumulées: @ViewData["Erreurs"]</h4>
+</div>
 }
+<!--#endregion -->
 
+<!--#region SCRIPT  -->
 <script>
     function validateForm() {
         var recto = document.getElementById('pariRecto');
         var verso = document.getElementById('pariVerso');
 
-        // Vérifie si l'utilisateur a sélectionné un type de pari
         if (!recto.checked && !verso.checked) {
             alert("Veuillez sélectionner un type de pari (Recto ou Verso).");
-            return false; // Empêche la soumission si aucune option n'est sélectionnée
+            return false;
         }
 
-        return true; // Permet la soumission du formulaire si une option est sélectionnée
+        return true;
     }
 </script>
+<!--#endregion -->
+
+<!--#region RESULT  -->
+<!--#region RESULT  -->
+<h2>Résultat du jeu</h2>
+
+<p>Votre choix : @ViewData["UserChoix"]</p>
+<p>Choix du système : @ViewData["SystemeChoix"]</p>
+
+@if ((ViewData["IsWin"] as bool?) == true)
+{
+    <p style="color: green;">Bravo ! Vous avez gagné !</p>
+}
+else if ((ViewData["IsWin"] as bool?).HasValue)
+{
+    <p style="color: red;">Dommage ! Essayez encore.</p>
+}
+<!--#endregion -->
+
+<!--#region Return  -->
+<form asp-action="Rejouer" method="post">
+    <button type="submit" class="btn btn-danger" value="reset">Rejouer du jeu</button>
+</form>
+<!--#endregion -->
